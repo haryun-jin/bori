@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
 <title>추억 앨범</title>
 <link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Gowun+Dodum&display=swap" rel="stylesheet">
 <style>
@@ -122,11 +123,18 @@ window.onerror = function (msg, src, line) {
 
 <script>
 /* ★ Apps Script 웹앱 주소 (배포 → 웹 앱 URL, .../exec 로 끝나는 주소) */
-var API_URL = 'https://script.google.com/macros/s/여기에_배포ID/exec';
+var API_URL = 'https://script.google.com/macros/s/AKfycbxUBKggAHBem7FSWCewMmRPIGq_vvq9nK0WZhqgK7wTCZs4M9S-JQJI2IQCVPcaDPYYUw/exec';
+
+/* 공유 링크의 접근키: https://.../bori/#k=접근키
+   # 뒤 값은 GitHub 서버나 다른 사이트로 전달되지 않음 */
+var ACCESS_KEY = '';
+try {
+  ACCESS_KEY = decodeURIComponent((location.hash.match(/[#&]k=([^&]*)/) || [])[1] || '');
+} catch (e) {}
 
 /* Apps Script 에 JSON 요청. 서버가 { error } 를 주면 실패로 처리 */
 function api(name) {
-  return fetch(API_URL + '?api=' + name)
+  return fetch(API_URL + '?api=' + name + '&k=' + encodeURIComponent(ACCESS_KEY))
     .then(function (r) {
       if (!r.ok) throw new Error('서버 응답 ' + r.status);
       return r.json();

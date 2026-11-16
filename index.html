@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>추억 앨범</title>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Gowun+Dodum&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#fdf8f2;--card:#fff;--ink:#4a3f35;--sub:#a08f7d;--accent:#e0a96d;--line:#f1e5d7}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font-family:'Gowun Dodum',sans-serif;line-height:1.7;-webkit-font-smoothing:antialiased}
+.wrap{max-width:560px;margin:0 auto;padding:0 14px 60px}
+.loading{text-align:center;padding:40vh 0;color:var(--sub)}
+.hero{text-align:center;padding:56px 0 26px}
+.hero .photo{width:180px;height:180px;border-radius:50%;object-fit:cover;border:6px solid #fff;box-shadow:0 6px 24px rgba(160,120,80,.18);background:var(--line)}
+.hero h1{font-family:'Gowun Batang',serif;font-size:30px;margin-top:20px}
+.hero .period{color:var(--sub);font-size:15px;letter-spacing:.05em}
+.hero .intro{margin-top:18px;font-size:16px;white-space:pre-line}
+.paw{color:var(--accent);font-size:18px;margin-top:14px}
+
+/* 상단 도구줄 (한 줄: 왼쪽 필터·보기 / 오른쪽 슬라이드쇼) */
+.bar{position:sticky;top:0;z-index:5;background:rgba(253,248,242,.95);display:flex;justify-content:space-between;align-items:center;gap:6px;padding:10px 0;border-bottom:1px solid var(--line)}
+.bar-left{display:flex;gap:6px}
+.seg{display:flex;background:#fff;border:1px solid var(--line);border-radius:999px;padding:2px}
+.seg button{border:0;background:none;font:inherit;font-size:13px;color:var(--sub);padding:4px 9px;border-radius:999px;cursor:pointer;white-space:nowrap}
+.seg button.on{background:var(--accent);color:#fff}
+.ss-btn{border:0;background:var(--accent);color:#fff;font:inherit;font-size:13px;height:32px;padding:0 13px;border-radius:999px;cursor:pointer;white-space:nowrap;flex-shrink:0}
+@media (max-width:430px){
+  .ss-btn{width:32px;padding:0}
+  .ss-btn .ss-txt{display:none}
+}
+
+.year{font-family:'Gowun Batang',serif;font-size:22px;color:var(--accent);margin:34px 0 12px;display:flex;align-items:center;gap:12px}
+.year:after{content:'';flex:1;height:1px;background:var(--line)}
+
+/* 크게 보기 */
+.card{background:var(--card);border-radius:18px;overflow:hidden;box-shadow:0 2px 14px rgba(160,120,80,.10);margin-bottom:22px}
+.media{position:relative;cursor:pointer;background:var(--line);min-height:140px}
+.media img{display:block;width:100%;height:auto}
+.body{padding:14px 18px 18px}
+.date{font-size:13px;color:var(--sub)}
+.title{font-family:'Gowun Batang',serif;font-size:18px;font-weight:700;margin-top:2px}
+.text{margin-top:6px;font-size:15px;white-space:pre-line}
+
+/* 3개씩 / 6개씩 */
+.grid{display:grid;gap:4px}
+.grid.g3{grid-template-columns:repeat(3,1fr)}
+.grid.g6{grid-template-columns:repeat(6,1fr);gap:2px}
+.cell{position:relative;aspect-ratio:1/1;background:var(--line);cursor:pointer;overflow:hidden;border-radius:6px}
+.grid.g6 .cell{border-radius:3px}
+.cell img{width:100%;height:100%;object-fit:cover;display:block}
+
+.play{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:64px;height:64px;border-radius:50%;background:rgba(255,255,255,.88);display:flex;align-items:center;justify-content:center;font-size:24px;color:var(--accent);padding-left:5px}
+.cell .play{width:30px;height:30px;font-size:12px;padding-left:2px}
+.grid.g6 .cell .play{width:18px;height:18px;font-size:8px;padding-left:1px}
+.err:after{content:'🐾';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--sub);font-size:18px}
+.empty{text-align:center;color:var(--sub);padding:40px 0}
+footer{text-align:center;color:var(--sub);font-size:13px;margin-top:48px}
+
+/* 크게 보기 / 슬라이드쇼 화면 */
+.viewer{position:fixed;inset:0;background:#2b2118;display:none;flex-direction:column;z-index:10}
+.viewer.on{display:flex}
+.stage{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;overflow:hidden;padding:64px 8px 0}
+.stage img{max-width:100%;max-height:100%;object-fit:contain;opacity:0;transition:opacity .7s}
+.stage img.show{opacity:1}
+.stage video{max-width:100%;max-height:100%;background:#000;border-radius:6px}
+.stage iframe{width:100%;height:100%;border:0;background:#000}
+.cap{color:#f6ece1;padding:14px 20px 28px;text-align:center;font-size:15px;white-space:pre-line;min-height:80px}
+.cap .date{color:#cdb9a3}
+.vbtn{position:absolute;background:rgba(255,255,255,.18);color:#fff;border:0;width:44px;height:44px;border-radius:50%;font-size:20px;cursor:pointer}
+.v-close{top:12px;right:12px}
+.v-play{top:12px;left:12px}
+.v-music{top:12px;left:64px;font-size:18px}
+.v-prev{left:8px;top:45%}
+.v-next{right:8px;top:45%}
+.viewer.isvid .v-prev,.viewer.isvid .v-next{top:auto;bottom:22px}
+.viewer.isvid .cap{padding:14px 64px 28px}
+.viewer:not(.ss) .v-play,.viewer:not(.ss) .v-music,.viewer.nomusic .v-music{display:none}
+.v-count{position:absolute;top:22px;left:0;right:0;text-align:center;color:#cdb9a3;font-size:13px;pointer-events:none}
+
+/* 슬라이드쇼 선택창 */
+.sheet{position:fixed;inset:0;background:rgba(45,35,25,.45);display:none;align-items:flex-end;justify-content:center;z-index:20}
+.sheet.on{display:flex}
+.panel{background:var(--bg);width:100%;max-width:560px;border-radius:22px 22px 0 0;padding:22px 20px 26px;max-height:82vh;overflow:auto}
+.panel h3{font-family:'Gowun Batang',serif;font-size:20px;text-align:center;margin-bottom:6px}
+.panel .label{font-size:13px;color:var(--sub);margin:14px 0 6px}
+.speed{display:flex;gap:6px}
+.speed button{flex:1;border:1px solid var(--line);background:#fff;border-radius:10px;padding:8px;font:inherit;color:var(--ink);cursor:pointer}
+.speed button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.opt{display:flex;justify-content:space-between;width:100%;border:1px solid var(--line);background:#fff;border-radius:12px;padding:12px 14px;font:inherit;font-size:15px;color:var(--ink);margin-bottom:8px;cursor:pointer}
+.opt span{color:var(--sub);font-size:13px}
+.opt.all{background:var(--accent);border-color:var(--accent);color:#fff}
+.opt.all span{color:#fff}
+.cancel{display:block;width:100%;border:0;background:none;font:inherit;color:var(--sub);padding:10px;margin-top:4px;cursor:pointer}
+.note{font-size:12px;color:var(--sub);text-align:center;margin-top:6px}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"><p class="loading">추억을 불러오는 중… 🐾</p></div>
+
+<div class="viewer" id="viewer">
+  <div class="stage" id="stage"></div>
+  <div class="cap" id="cap"></div>
+  <div class="v-count" id="count"></div>
+  <button class="vbtn v-play" id="playBtn" onclick="togglePlay()">⏸</button>
+  <button class="vbtn v-music" id="musicBtn" onclick="toggleMusic()">🎵</button>
+  <button class="vbtn v-close" onclick="closeV()">✕</button>
+  <button class="vbtn v-prev" onclick="nav(-1)">‹</button>
+  <button class="vbtn v-next" onclick="nav(1)">›</button>
+</div>
+
+<div class="sheet" id="sheet" onclick="if(event.target===this)closePicker()">
+  <div class="panel" id="panel"></div>
+</div>
+
+<script>
+window.onerror = function (msg, src, line) {
+  var a = document.getElementById('app');
+  if (a) a.innerHTML = '<p class="loading">오류가 났어요<br><small>' + String(msg).replace(/</g, '&lt;') + ' (줄 ' + line + ')</small></p>';
+};
+</script>
+
+<script>
+/* ★ Apps Script 웹앱 주소 (배포 → 웹 앱 URL, .../exec 로 끝나는 주소) */
+var API_URL = 'https://script.google.com/macros/s/여기에_배포ID/exec';
+
+/* Apps Script 에 JSON 요청. 서버가 { error } 를 주면 실패로 처리 */
+function api(name) {
+  return fetch(API_URL + '?api=' + name)
+    .then(function (r) {
+      if (!r.ok) throw new Error('서버 응답 ' + r.status);
+      return r.json();
+    })
+    .then(function (d) {
+      if (d && d.error) throw new Error(d.error);
+      return d;
+    });
+}
+
+var DATA = null;      // 서버에서 받은 앨범 데이터
+var LIST = [];        // 크게 보기/슬라이드쇼에서 넘겨볼 사진 번호 목록
+var pos = 0;          // LIST 안에서 지금 위치
+var VIEW = 'big';     // big / g3 / g6
+var FILTER = 'all';   // all / photo / video
+var SPEED = 5;        // 슬라이드쇼 넘김 초
+var playing = false, timer = null, seq = 0;
+var audio = null, musicOn = true, triedFallback = false, fadeTimer = null;
+
+try {
+  VIEW = localStorage.getItem('albumView') || 'big';
+  SPEED = Number(localStorage.getItem('albumSpeed')) || 5;
+  musicOn = localStorage.getItem('albumMusic') !== '0';
+} catch (e) {}
+
+function esc(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+function thumb(id, w) {
+  return 'https://drive.google.com/thumbnail?id=' + encodeURIComponent(id) + '&sz=w' + w;
+}
+function fmtDate(d) { return (d || '').replace(/-/g, '.'); }
+function $(id) { return document.getElementById(id); }
+
+function fail(msg) {
+  $('app').innerHTML = '<p class="loading">불러오지 못했어요<br><small>' + esc(msg) + '</small></p>';
+}
+
+/* 지금 고른 필터(전체/사진/영상)에 해당하는지 */
+function visible(i) {
+  if (FILTER === 'all') return true;
+  return (FILTER === 'video') === !!DATA.items[i].video;
+}
+
+/* 연도별 묶음: [{year:'2012', idx:[0,1,2]}, ...] */
+function byYear() {
+  var out = [], map = {};
+  DATA.items.forEach(function (it, i) {
+    var y = (it.date || '').slice(0, 4);
+    if (!(y in map)) { map[y] = out.length; out.push({ year: y, idx: [] }); }
+    out[map[y]].idx.push(i);
+  });
+  return out;
+}
+
+/* ───── 첫 화면 ───── */
+function render(d) {
+  DATA = d;
+  document.title = d.name || '추억 앨범';
+
+  var h = '<header class="hero">';
+  if (d.cover) h += '<img class="photo" src="' + thumb(d.cover, 600) + '" alt="">';
+  h += '<h1>' + esc(d.name) + '</h1>';
+  h += '<div class="period">' + esc(d.period) + '</div>';
+  if (d.intro) h += '<p class="intro">' + esc(d.intro) + '</p>';
+  h += '<div class="paw">🐾</div></header>';
+
+  h += '<div class="bar"><div class="bar-left">';
+  h += '<div class="seg" id="fseg">' + fBtn('all', '전체') + fBtn('photo', '사진') + fBtn('video', '영상') + '</div>';
+  h += '<div class="seg" id="vseg">' + segBtn('big', '크게') + segBtn('g3', '3개') + segBtn('g6', '6개') + '</div>';
+  h += '</div><button class="ss-btn" onclick="openPicker()" title="슬라이드쇼">▶<span class="ss-txt"> 슬라이드쇼</span></button></div>';
+
+  h += '<div id="list"></div>';
+  h += '<footer>' + esc(d.name) + '와 함께한 모든 날을 기억하며</footer>';
+  $('app').innerHTML = h;
+  if (!d.music) $('viewer').classList.add('nomusic');
+  $('musicBtn').textContent = musicOn ? '🎵' : '🔇';
+  renderList();
+}
+
+function fBtn(v, label) {
+  return '<button data-v="' + v + '" class="' + (FILTER === v ? 'on' : '') + '" onclick="setFilter(\'' + v + '\')">' + label + '</button>';
+}
+function segBtn(v, label) {
+  return '<button data-v="' + v + '" class="' + (VIEW === v ? 'on' : '') + '" onclick="setView(\'' + v + '\')">' + label + '</button>';
+}
+function markOn(segId, v) {
+  var btns = document.querySelectorAll('#' + segId + ' button');
+  for (var i = 0; i < btns.length; i++) btns[i].classList.toggle('on', btns[i].getAttribute('data-v') === v);
+}
+
+function setView(v) {
+  VIEW = v;
+  try { localStorage.setItem('albumView', v); } catch (e) {}
+  markOn('vseg', v);
+  renderList();
+}
+
+function setFilter(v) {
+  FILTER = v;
+  markOn('fseg', v);
+  renderList();
+  // 아래로 많이 내려가 있었으면 목록 맨 위로
+  var top = $('list').offsetTop - document.querySelector('.bar').offsetHeight - 4;
+  if (window.scrollY > top) window.scrollTo(0, top);
+}
+
+function renderList() {
+  var h = '';
+  byYear().forEach(function (g) {
+    var idx = g.idx.filter(visible);
+    if (!idx.length) return;
+    h += '<div class="year">' + esc(g.year || '언젠가') + '</div>';
+    if (VIEW === 'big') {
+      idx.forEach(function (i) { h += card(i); });
+    } else {
+      h += '<div class="grid ' + VIEW + '">';
+      idx.forEach(function (i) { h += cell(i); });
+      h += '</div>';
+    }
+  });
+  if (!h) {
+    h = '<p class="empty">' + (FILTER === 'video' ? '아직 올라온 영상이 없어요.' : '아직 올라온 사진이 없어요.') + '</p>';
+  }
+  $('list').innerHTML = h;
+}
+
+function card(i) {
+  var it = DATA.items[i];
+  var h = '<article class="card"><div class="media" onclick="openV(' + i + ')">';
+  h += '<img loading="lazy" src="' + thumb(it.id, 1000) + '" alt="" onerror="imgErr(this)">';
+  if (it.video) h += '<div class="play">▶</div>';
+  h += '</div><div class="body"><div class="date">' + esc(fmtDate(it.date)) + '</div>';
+  if (it.title) h += '<div class="title">' + esc(it.title) + '</div>';
+  if (it.text) h += '<p class="text">' + esc(it.text) + '</p>';
+  return h + '</div></article>';
+}
+
+function cell(i) {
+  var it = DATA.items[i];
+  var w = VIEW === 'g6' ? 300 : 500;
+  var h = '<div class="cell" onclick="openV(' + i + ')">';
+  h += '<img loading="lazy" src="' + thumb(it.id, w) + '" alt="" onerror="imgErr(this)">';
+  if (it.video) h += '<div class="play">▶</div>';
+  return h + '</div>';
+}
+
+function imgErr(img) {
+  img.parentNode.classList.add('err');
+  img.remove();
+}
+
+/* ───── 크게 보기 ───── */
+function openV(i) {
+  stopPlay();
+  LIST = DATA.items.map(function (_, k) { return k; }).filter(visible);   // 지금 필터 안에서만 넘김
+  pos = Math.max(0, LIST.indexOf(i));
+  $('viewer').classList.remove('ss');
+  showViewer();
+  showV();
+}
+function showViewer() {
+  $('viewer').classList.add('on');
+  document.body.style.overflow = 'hidden';
+}
+function closeV() {
+  stopPlay();
+  if (audio) { try { audio.currentTime = 0; } catch (e) {} }
+  $('viewer').classList.remove('on', 'ss', 'isvid');
+  $('stage').innerHTML = '';
+  document.body.style.overflow = '';
+}
+function nav(n) {
+  var len = LIST.length;
+  pos = (pos + n + len) % len;
+  showV();
+}
+
+/* 드라이브 플레이어로 재생 (기본 재생기로 안 될 때 대신) */
+function driveFrame(id) {
+  return '<iframe src="https://drive.google.com/file/d/' + encodeURIComponent(id)
+       + '/preview" allow="autoplay; fullscreen" allowfullscreen></iframe>';
+}
+
+/* 영상 직접 주소: 영상키가 있으면 Drive API(영상 형식으로 보내줌), 없으면 일반 다운로드 주소 */
+function videoUrl(id) {
+  if (DATA.vkey) {
+    return 'https://www.googleapis.com/drive/v3/files/' + encodeURIComponent(id)
+         + '?alt=media&key=' + encodeURIComponent(DATA.vkey);
+  }
+  return 'https://drive.google.com/uc?export=download&id=' + encodeURIComponent(id);
+}
+
+function showV() {
+  var it = DATA.items[LIST[pos]];
+  var st = $('stage');
+  var my = ++seq;
+  clearTimeout(timer);
+
+  if (it.video) {
+    $('viewer').classList.add('isvid');
+    // 휴대폰 기본 재생기로 재생 (버튼 한 벌만 나옴)
+    var v = document.createElement('video');
+    v.controls = true;
+    v.playsInline = true;
+    v.setAttribute('playsinline', '');
+    v.setAttribute('webkit-playsinline', '');
+    v.preload = 'metadata';
+    v.poster = thumb(it.id, 1000);
+    v.onerror = function () {               // 직접 재생이 막히면 드라이브 플레이어로
+      if (my === seq) st.innerHTML = driveFrame(it.id);
+    };
+    v.src = videoUrl(it.id);
+    st.innerHTML = '';
+    st.appendChild(v);
+    var p = v.play();
+    if (p && p.catch) p.catch(function () {});
+  } else {
+    $('viewer').classList.remove('isvid');
+    var img = new Image();
+    img.alt = '';
+    img.onload = function () {
+      if (my !== seq) return;              // 그 사이 다른 사진으로 넘어갔으면 무시
+      img.classList.add('show');
+      if (playing) schedule();
+    };
+    img.onerror = function () { if (my === seq && playing) schedule(); };
+    img.src = thumb(it.id, 2000);
+    st.innerHTML = '';
+    st.appendChild(img);
+    if (playing && LIST.length > 1) {      // 다음 사진 미리 받아두기
+      var nx = DATA.items[LIST[(pos + 1) % LIST.length]];
+      new Image().src = thumb(nx.id, 2000);
+    }
+  }
+
+  var c = '<div class="date">' + esc(fmtDate(it.date)) + '</div>';
+  if (it.title) c += '<div>' + esc(it.title) + '</div>';
+  if (it.text) c += '<div>' + esc(it.text) + '</div>';
+  $('cap').innerHTML = c;
+  $('count').textContent = (pos + 1) + ' / ' + LIST.length;
+}
+
+/* ───── 슬라이드쇼 ───── */
+function openPicker() {
+  var photoCount = DATA.items.filter(function (it) { return !it.video; }).length;
+  var h = '<h3>슬라이드쇼</h3>';
+  h += '<div class="label">넘기는 속도</div><div class="speed">';
+  [3, 5, 8].forEach(function (s) {
+    h += '<button class="' + (SPEED === s ? 'on' : '') + '" onclick="setSpeed(' + s + ')">' + s + '초</button>';
+  });
+  h += '</div><div class="label">무엇을 볼까요</div>';
+
+  if (!photoCount) {
+    h += '<p class="empty">아직 사진이 없어요.</p>';
+  } else {
+    h += '<button class="opt all" onclick="startShow(-1)">처음부터 끝까지<span>' + photoCount + '장</span></button>';
+    byYear().forEach(function (g, gi) {
+      var n = g.idx.filter(function (i) { return !DATA.items[i].video; }).length;
+      if (!n) return;
+      h += '<button class="opt" onclick="startShow(' + gi + ')">'
+         + (g.year ? esc(g.year) + '년' : '언젠가') + '<span>' + n + '장</span></button>';
+    });
+  }
+  h += '<p class="note">슬라이드쇼에서는 영상은 빼고 사진만 보여드려요'
+     + (DATA.music ? '<br>🎵 배경음악과 함께 재생돼요' : '') + '</p>';
+  h += '<button class="cancel" onclick="closePicker()">닫기</button>';
+  $('panel').innerHTML = h;
+  $('sheet').classList.add('on');
+}
+function closePicker() { $('sheet').classList.remove('on'); }
+
+function setSpeed(s) {
+  SPEED = s;
+  try { localStorage.setItem('albumSpeed', String(s)); } catch (e) {}
+  openPicker();
+}
+
+function startShow(gi) {
+  var src = gi < 0 ? DATA.items.map(function (_, k) { return k; }) : byYear()[gi].idx;
+  LIST = src.filter(function (i) { return !DATA.items[i].video; });
+  if (!LIST.length) return;
+  closePicker();
+  pos = 0;
+  $('viewer').classList.add('ss');
+  showViewer();
+  playing = true;
+  $('playBtn').textContent = '⏸';
+  playMusic(true);
+  showV();
+}
+
+function schedule() {
+  clearTimeout(timer);
+  timer = setTimeout(function () { nav(1); }, SPEED * 1000);
+}
+function togglePlay() {
+  if (playing) { stopPlay(); }
+  else { playing = true; $('playBtn').textContent = '⏸'; playMusic(false); schedule(); }
+}
+function stopPlay() {
+  playing = false;
+  clearTimeout(timer);
+  $('playBtn').textContent = '▶';
+  if (audio) audio.pause();
+}
+
+/* ───── 배경음악 ───── */
+function playMusic(fromStart) {
+  if (!DATA.music || !musicOn) return;
+  if (!audio) {
+    audio = new Audio();
+    audio.loop = true;
+    audio.onerror = musicFallback;          // 직접 링크가 막히면 서버에서 받아옴
+    audio.src = 'https://drive.google.com/uc?export=download&id=' + encodeURIComponent(DATA.music);
+  }
+  if (fromStart) { try { audio.currentTime = 0; } catch (e) {} }
+  audio.volume = 0;
+  var p = audio.play();
+  if (p && p.catch) p.catch(function () {});
+  clearInterval(fadeTimer);                 // 2초 동안 서서히 커지게
+  fadeTimer = setInterval(function () {
+    var v = Math.min(1, audio.volume + 0.05);
+    audio.volume = v;
+    if (v >= 1) clearInterval(fadeTimer);
+  }, 100);
+}
+
+function musicFallback() {
+  if (triedFallback) return;
+  triedFallback = true;
+  api('music')
+    .then(function (m) {
+      if (!m || !m.data) return;
+      var bin = atob(m.data), arr = new Uint8Array(bin.length);
+      for (var i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+      audio.src = URL.createObjectURL(new Blob([arr], { type: m.mime }));
+      if (playing && musicOn && $('viewer').classList.contains('ss')) {
+        var p = audio.play();
+        if (p && p.catch) p.catch(function () {});
+      }
+    })
+    .catch(function () {});
+}
+
+function toggleMusic() {
+  musicOn = !musicOn;
+  try { localStorage.setItem('albumMusic', musicOn ? '1' : '0'); } catch (e) {}
+  $('musicBtn').textContent = musicOn ? '🎵' : '🔇';
+  if (musicOn) { if (playing) playMusic(false); }
+  else if (audio) audio.pause();
+}
+
+/* ───── 스와이프 / 키보드 ───── */
+var sx = null;
+var stageEl = $('stage');
+stageEl.addEventListener('touchstart', function (e) { sx = e.touches[0].clientX; }, { passive: true });
+stageEl.addEventListener('touchend', function (e) {
+  if (sx === null) return;
+  var dx = e.changedTouches[0].clientX - sx;
+  sx = null;
+  if (Math.abs(dx) > 50) nav(dx < 0 ? 1 : -1);
+});
+document.addEventListener('keydown', function (e) {
+  if (!$('viewer').classList.contains('on')) return;
+  if (e.key === 'Escape') closeV();
+  else if (e.key === 'ArrowRight') nav(1);
+  else if (e.key === 'ArrowLeft') nav(-1);
+  else if (e.key === ' ' && $('viewer').classList.contains('ss')) { e.preventDefault(); togglePlay(); }
+});
+
+/* ───── 데이터 불러오기 ───── */
+api('data')
+  .then(function (d) {
+    try {
+      if (!d) throw new Error('받은 데이터가 비어 있어요');
+      render(d);
+    } catch (e) { fail(e.message); }
+  })
+  .catch(function (e) { fail(e && e.message ? e.message : String(e)); });
+</script>
+</body>
+</html>
